@@ -51,7 +51,7 @@ const ChatBot = () => {
         e.preventDefault();
         if (!input.trim() || loading) return;
         
-        dispatch(sendChatMessage({ message: input, boardId }));
+        dispatch(sendChatMessage({ message: input, boardName }));
         setInput('');
     };
 
