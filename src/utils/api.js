@@ -14,28 +14,24 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
-);
-
 export async function fetchRagResponse(query, options = {}) {
   try {
-    const token = options.token || localStorage.getItem('token');
-    const body = { 
-        query,
-        boardId: options.boardId || null,
-        topK: options.topK || 10,
-        history: options.history || [] 
+    const body = {
+      query,
+      boardId: options.boardId || null,
+      topK: options.topK || 10,
+      history: options.history || []
     };
-    
-    const res = await api.post('/rag/search', body, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
+
+    const res = await api.post('/rag/search', body);
 
     return res.data;
   } catch (err) {
-    return { error: err?.response?.data?.error || err.message };
+    return {
+      error: err?.response?.data?.error || err.message,
+      type: "TEXT",
+      content: "I encountered an error while processing your request."
+    };
   }
 }
 
