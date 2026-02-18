@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './ChatBot.module.css';
-import { MessageOutlined, SendOutlined, CloseOutlined } from '@ant-design/icons';
+import { MessageOutlined, SendOutlined, CloseOutlined, SettingOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { sendChatMessage, clearChat, setBoardId, resetBoardId } from '../../store/chatSlice';
 import { useLocation } from 'react-router-dom';
@@ -11,7 +11,7 @@ const ChatBot = () => {
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState('');
     const scrollRef = useRef(null);
-    
+
     const messages = useSelector((state) => state.chat?.messages || []);
     const loading = useSelector((state) => state.chat?.loading);
     const error = useSelector((state) => state.chat?.error);
@@ -20,7 +20,7 @@ const ChatBot = () => {
     const location = useLocation();
 
     const boardId = location.pathname.match(/\/kanban\/([^/]+)/)?.[1] || null;
-    
+
     const boardName = boardId
         ? (boards.find(b => b.id === boardId || b._id === boardId)?.name || "Current Board")
         : null;
@@ -50,15 +50,13 @@ const ChatBot = () => {
     const handleSend = (e) => {
         e.preventDefault();
         if (!input.trim() || loading) return;
-        
+
         dispatch(sendChatMessage({ message: input, boardName }));
         setInput('');
     };
 
     const handleOpen = () => setOpen(true);
-    const handleClose = () => {
-        setOpen(false);
-    };
+    const handleClose = () => setOpen(false);
 
     return (
         <>
@@ -90,7 +88,14 @@ const ChatBot = () => {
                                     key={idx}
                                     className={msg.from === 'bot' ? styles.botMessage : styles.userMessage}
                                 >
-                                    {msg.text}
+                                    {msg.type === 'TOOL_CALL' ? (
+                                        <div className={styles.toolCallIndicator}>
+                                            <SettingOutlined spin style={{ marginRight: 8 }} />
+                                            <em>Executing Jira action...</em>
+                                        </div>
+                                    ) : (
+                                        msg.content || msg.text
+                                    )}
                                 </div>
                             ))}
                             {loading && (

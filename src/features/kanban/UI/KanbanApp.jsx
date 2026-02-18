@@ -9,9 +9,11 @@ import { areDependenciesReady } from '../../../utils/dependencyHelpers';
 import { useParams } from 'react-router-dom';
 import { COLUMNS_CONFIG } from '../../../utils/constants';
 import KanbanView from './KanbanView';
-import styles from './KanbanView.module.css'; 
-import { createTask, deleteTaskAsync, moveTaskAsync, setTasksLocal, 
-  fetchTasks, selectTasksByBoard, selectTasksLoadingByBoard } from '../../../store/taskSlice';
+import styles from './KanbanView.module.css';
+import {
+  createTask, deleteTaskAsync, moveTaskAsync, setTasksLocal,
+  fetchTasks, selectTasksByBoard, selectTasksLoadingByBoard
+} from '../../../store/taskSlice';
 import { selectBoards, deleteBoardAsync, removeBoardLocal } from '../../../store/boardSlice';
 import { getIntermediateRank } from '../../../utils/lexorank';
 
@@ -27,31 +29,33 @@ export const KanbanApp = () => {
   const loading = useSelector((state) => state.tasks.loading);
   const tasksPage = useSelector((state) => state.tasks.tasksPage[kanbanId]) || EMPTY_OBJ;
   const tasksHasMore = useSelector((state) => state.tasks.tasksHasMore[kanbanId]) || EMPTY_OBJ;
-  
+
   const tasksTotal = useSelector((state) => state.tasks.tasksTotal[kanbanId]) || EMPTY_OBJ;
   const tasksLoading = useSelector((state) => selectTasksLoadingByBoard(state, kanbanId));
-  
+
   const [boardUsers, setBoardUsers] = useState([]);
   const [forceRefresh, setForceRefresh] = useState({ visible: false, reason: '' });
   const [boardDeleted, setBoardDeleted] = useState({ visible: false, reason: '' });
 
   useEffect(() => {
     const taskEvents = ['task:created', 'task:updated', 'task:deleted', 'task:moved'];
-    function handleTaskEvent({ boardId, userId }) {
+    function handleTaskEvent(payload) {
+      const { boardId, userId, isAgent } = payload;
       if (
-        boardId === kanbanId && userId &&
-        user?.id && userId !== user.id
+        boardId === kanbanId &&
+        ((userId && user?.id && userId !== user.id) || isAgent)
       ) {
         setForceRefresh({ visible: true, reason: '' });
       }
     }
-    function handleBoardDeleted({ boardId, userId }) {
+    function handleBoardDeleted(payload) {
+      const { boardId, userId, isAgent } = payload;
       if (
-        boardId === kanbanId && userId &&
-        user?.id && userId !== user.id
+        boardId === kanbanId &&
+        ((userId && user?.id && userId !== user.id) || isAgent)
       ) {
         dispatch(removeBoardLocal(boardId));
-        setBoardDeleted({ visible: true, reason: 'This board was deleted by another user. You will be redirected to the main page.' });
+        setBoardDeleted({ visible: true, reason: 'This board was deleted. You will be redirected to the main page.' });
       }
     }
     for (const event of taskEvents) {
@@ -78,9 +82,9 @@ export const KanbanApp = () => {
   }, [kanbanId]);
 
   useEffect(() => {
-    if (!kanbanId || !user) 
+    if (!kanbanId || !user)
       return;
-    if (!socket.connected) 
+    if (!socket.connected)
       socket.connect();
     socket.emit('join_board', { boardId: kanbanId, user });
     return () => { socket.emit('leave_board'); };
@@ -88,7 +92,7 @@ export const KanbanApp = () => {
 
   useEffect(() => {
     if (!kanbanId) return;
-    
+
     COLUMNS_CONFIG.forEach((col) => {
       dispatch(fetchTasks({ boardId: kanbanId, status: col.id, skip: 0, limit: 12 }));
     });
@@ -110,7 +114,7 @@ export const KanbanApp = () => {
       assignedTo,
       description,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-      dependencies 
+      dependencies
     };
     dispatch(createTask(payload));
   };
@@ -142,12 +146,12 @@ export const KanbanApp = () => {
 
   const fetchMoreTasks = (status) => {
     const currentCount = allTasks.filter(t => t.status === status).length;
-    
-    dispatch(fetchTasks({ 
-      boardId: kanbanId, 
-      status, 
-      skip: currentCount, 
-      limit: 12 
+
+    dispatch(fetchTasks({
+      boardId: kanbanId,
+      status,
+      skip: currentCount,
+      limit: 12
     }));
   };
 
@@ -164,17 +168,17 @@ export const KanbanApp = () => {
       .filter(t => t.status === destination.droppableId && t.id !== draggableId)
 
     const prevTask = destColTasks[destination.index - 1];
-    const nextTask = destColTasks[destination.index]; 
+    const nextTask = destColTasks[destination.index];
 
     const tempRank = getIntermediateRank(
       prevTask ? prevTask.order : null,
       nextTask ? nextTask.order : null
     );
 
-    const optimisticallyUpdatedTask = { 
-      ...task, 
-      status: destination.droppableId, 
-      order: tempRank 
+    const optimisticallyUpdatedTask = {
+      ...task,
+      status: destination.droppableId,
+      order: tempRank
     };
 
     const otherTasks = allTasks.filter(t => t.id !== draggableId);
@@ -190,7 +194,7 @@ export const KanbanApp = () => {
     if (isMovingToNewCol && (destination.droppableId === 'in_progress' || destination.droppableId === 'done')) {
       if (Array.isArray(task.dependencies) && task.dependencies.length > 0) {
         const depStatus = await areDependenciesReady(task.id, destination.droppableId);
-        
+
         if (!depStatus.ready) {
           setDepBlockModal({ visible: true, blockingTasks: depStatus.blocking || [] });
           dispatch(setTasksLocal({
@@ -203,7 +207,7 @@ export const KanbanApp = () => {
       }
     }
 
-  dispatch(moveTaskAsync({
+    dispatch(moveTaskAsync({
       taskId: task.id,
       status: destination.droppableId,
       prevRank: prevTask ? prevTask.order : null,

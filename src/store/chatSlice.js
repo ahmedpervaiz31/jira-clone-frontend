@@ -4,7 +4,7 @@ import { fetchRagResponse } from '../utils/api';
 
 const initialState = {
     messages: [
-        { from: 'bot', text: CHATBOT.INIT }
+        { from: 'bot', type: 'TEXT', content: CHATBOT.INIT }
     ],
     loading: false,
     error: null,
@@ -16,15 +16,15 @@ export const sendChatMessage = createAsyncThunk(
     async ({ message, boardId: argBoardId }, { dispatch, getState, rejectWithValue }) => {
         try {
             dispatch(addUserMessage(message));
-            
+
             const state = getState();
             const activeBoardId = argBoardId || state.chat.boardId;
             const history = state.chat.messages
-                .slice(1) 
-                .slice(-3) 
+                .slice(1)
+                .slice(-3)
                 .map(msg => ({
                     role: msg.from === 'bot' ? 'assistant' : 'user',
-                    content: msg.text
+                    content: msg.content || msg.text || (typeof msg === 'string' ? msg : "")
                 }));
 
             const token = localStorage.getItem('token');
@@ -35,12 +35,10 @@ export const sendChatMessage = createAsyncThunk(
             };
 
             const response = await fetchRagResponse(message, options);
-            
+
             if (response.error) throw new Error(response.error);
-            
-            const botText = response.answer || (typeof response === 'string' ? response : JSON.stringify(response));
-            
-            return botText;
+
+            return response;
         } catch (err) {
             return rejectWithValue(err.message);
         }
@@ -52,14 +50,14 @@ const chatSlice = createSlice({
     initialState,
     reducers: {
         addUserMessage: (state, action) => {
-            state.messages.push({ from: 'user', text: action.payload });
+            state.messages.push({ from: 'user', type: 'TEXT', content: action.payload });
         },
         addBotMessage: (state, action) => {
-            state.messages.push({ from: 'bot', text: action.payload });
+            state.messages.push({ from: 'bot', ...action.payload });
         },
         clearChat: {
             reducer: (state, action) => {
-                state.messages = [{ from: 'bot', text: CHATBOT.INIT }];
+                state.messages = [{ from: 'bot', type: 'TEXT', content: CHATBOT.INIT }];
                 state.loading = false;
                 state.error = null;
                 if (action?.payload?.boardId) {
@@ -83,12 +81,19 @@ const chatSlice = createSlice({
             })
             .addCase(sendChatMessage.fulfilled, (state, action) => {
                 state.loading = false;
-                state.messages.push({ from: 'bot', text: action.payload });
+                state.messages.push({
+                    from: 'bot',
+                    ...action.payload
+                });
             })
             .addCase(sendChatMessage.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || 'Failed to get response';
-                state.messages.push({ from: 'bot', text: `Error: ${state.error}` });
+                state.messages.push({
+                    from: 'bot',
+                    type: 'TEXT',
+                    content: `Error: ${state.error}`
+                });
             });
     },
 });
