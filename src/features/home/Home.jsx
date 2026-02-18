@@ -21,13 +21,19 @@ const Home = () => {
   const [forceRefresh, setForceRefresh] = useState({ visible: false, reason: '' });
 
   useEffect(() => {
-    function handleBoardEvent({ userId }) {
-      if (userId && user?.id && userId !== user.id) {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    function handleBoardEvent(payload) {
+      const { userId, isAgent } = payload;
+      if ((userId && user?.id && userId !== user.id) || isAgent) {
         setForceRefresh({ visible: true, reason: '' });
       }
     }
-    function handleBoardDeleted({ userId }) {
-      if (userId && user?.id && userId !== user.id) {
+    function handleBoardDeleted(payload) {
+      const { userId, isAgent } = payload;
+      if ((userId && user?.id && userId !== user.id) || isAgent) {
         setForceRefresh({ visible: true, reason: 'A board was deleted. Please refresh.' });
       }
     }

@@ -1,11 +1,11 @@
-
 .overlay {
 	position: fixed;
 	top: 0;
 	left: 0;
 	width: 100vw;
 	height: 100vh;
-	background: rgba(0,0,0,0.45);
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
 	z-index: 9999;
 	display: flex;
 	align-items: center;
@@ -13,27 +13,44 @@
 }
 
 .modal {
-	background: #fff;
-	border-radius: 8px;
+	background-color: var(--bg-surface);
+	color: var(--text-primary);
+	border-radius: 12px;
 	padding: 2rem 2.5rem;
-	box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 	text-align: center;
 	min-width: 320px;
+	border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.modal h2 {
+	margin-top: 0;
+	margin-bottom: 1rem;
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+.modal p {
+	color: var(--text-secondary, #888);
+	margin-bottom: 2rem;
+	line-height: 1.5;
 }
 
 .refreshBtn {
-	margin-top: 1.5rem;
 	padding: 0.75rem 2rem;
-	font-size: 1.1rem;
-	font-weight: 600;
-	background: #2563eb;
+	font-size: 1rem;
+	font-weight: 500;
+	background-color: var(--color-primary);
 	color: #fff;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	cursor: pointer;
-	box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-	transition: background 0.2s;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	transition: all 0.2s ease;
 }
+
 .refreshBtn:hover {
-	background: #1741a6;
+	opacity: 0.9;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
